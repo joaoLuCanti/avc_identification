@@ -7,3 +7,4 @@ train_non_ct
 **.h5
 **.zip
 **.txt
+.venv
