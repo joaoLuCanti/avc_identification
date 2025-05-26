@@ -88,7 +88,8 @@ from sklearn.metrics import precision_score, recall_score, f1_score
 
 
 def process_dycom():
-    angles_to_rotate = [15,30,45,60,75,90]
+    # angles_to_rotate = [15,30,45,60,75,90]
+    angles_to_rotate = []
     path = os.getcwd()
     datasets =["test","train"]
     outro = ["1","0"]
@@ -107,7 +108,7 @@ def process_dycom():
                     with open("CT.txt", 'a') as file:
                         file.write(slices+"\n")
                 else:
-                    with open("non_CT.txt\n", 'a') as file:
+                    with open("non_CT.txt", 'a') as file:
                         file.write(slices+"\n")
                     janelamento = [0, 150]
                     CT_case = False
