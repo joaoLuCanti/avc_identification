@@ -8,4 +8,5 @@ train_non_ct
 **.zip
 **.txt
 !requirements.txt
+!requirements-colab.txt
 .venv
