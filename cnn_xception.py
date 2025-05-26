@@ -1,15 +1,15 @@
 import os
 import tensorflow as tf
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import GlobalAveragePooling2D, Dense, Dropout, Conv2D
-from tensorflow.keras.applications import Xception
-from tensorflow.keras.applications.xception import preprocess_input
+from keras.preprocessing.image import ImageDataGenerator
+from keras.models import Sequential
+from keras.layers import GlobalAveragePooling2D, Dense, Dropout, Conv2D
+from keras.applications import Xception
+from keras.applications.xception import preprocess_input
 from sklearn.metrics import confusion_matrix, classification_report
-from tensorflow.keras.metrics import Recall, Precision
-from tensorflow.keras.applications import ResNet101, ResNet50, DenseNet121, EfficientNetB0
-from tensorflow.keras.metrics import Recall, Precision
-from tensorflow.keras.applications.resnet50 import preprocess_input
+from keras.metrics import Recall, Precision
+from keras.applications import ResNet101, ResNet50, DenseNet121, EfficientNetB0
+from keras.metrics import Recall, Precision
+from keras.applications.resnet50 import preprocess_input
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
