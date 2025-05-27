@@ -1,6 +1,6 @@
 import os
 import tensorflow as tf
-from keras.src.legacy.preprocessing.image import ImageDataGenerator
+import keras
 from keras.models import Sequential
 from keras.layers import GlobalAveragePooling2D, Dense, Dropout, Conv2D
 from keras.applications import Xception
@@ -18,56 +18,74 @@ import seaborn as sns
 img_height = 128
 img_width = 128
 batch_size = 64
-epochs = 5 # 60
+epochs = 5  # 60
 
 # Caminhos
 train_dir = 'train'
 test_dir = 'test'
 
 # Geradores de dados
-def create_generators(
-        train_datagen = ImageDataGenerator(preprocessing_function=preprocess_input),
-        test_datagen = ImageDataGenerator(preprocessing_function=preprocess_input)
-):
-    train_generator = train_datagen.flow_from_directory(
+def create_datasets(use_augmentation=True):
+    train_ds = tf.keras.utils.image_dataset_from_directory(
         train_dir,
-        target_size=(img_height, img_width),
+        labels='inferred',
+        label_mode='binary',
         batch_size=batch_size,
-        class_mode='binary'
+        image_size=(img_height, img_width),
+        shuffle=True
     )
-
-    test_generator = test_datagen.flow_from_directory(
+    test_ds = tf.keras.utils.image_dataset_from_directory(
         test_dir,
-        target_size=(img_height, img_width),
+        labels='inferred',
+        label_mode='binary',
         batch_size=batch_size,
-        class_mode='binary',
-        shuffle=False  # Manter ordem para matriz de confusão
+        image_size=(img_height, img_width),
+        shuffle=False
     )
-    return train_generator, test_generator
 
-train_generator, test_generator = create_generators()
+    # Augmentação condicional
+    if use_augmentation:
+        data_augmentation = tf.keras.Sequential([
+            tf.keras.layers.RandomFlip("horizontal"),
+            tf.keras.layers.RandomRotation(0.25),
+            tf.keras.layers.RandomContrast(0.1),
+        ])
+        train_ds = train_ds.map(lambda x, y: (data_augmentation(x, training=True), y))
+
+    preprocess = lambda x, y: (preprocess_input(tf.cast(x, tf.float32)), y)
+    train_ds = train_ds.map(preprocess)
+    test_ds = test_ds.map(preprocess)
+
+    train_ds = train_ds.prefetch(buffer_size=tf.data.AUTOTUNE)
+    test_ds = test_ds.prefetch(buffer_size=tf.data.AUTOTUNE)
+    return train_ds, test_ds
+
+
+train_ds, test_ds = create_datasets()
 
 # Definição do modelo Xception
-#base_model = Xception(weights='imagenet', include_top=False, input_shape=(img_height, img_width, 3))
+# base_model = Xception(weights='imagenet', include_top=False, input_shape=(img_height, img_width, 3))
+
 
 def create_model():
-    base_model = ResNet50(weights='imagenet', include_top=False, input_shape=(img_height, img_width, 3))
+    base_model = ResNet50(weights='imagenet', include_top=False,
+                          input_shape=(img_height, img_width, 3))
     new_input_layer = Conv2D(64, (7, 7), strides=(2, 2), padding='same', input_shape=(img_height, img_width, 1))
     base_model.layers[0] = new_input_layer
     base_model.trainable = True  # Congelar camadas do modelo base
     model = Sequential([
         base_model,
         GlobalAveragePooling2D(),
-        #Conv2D(1024, (3, 3), strides=(2, 2), padding='same'),
+        # Conv2D(1024, (3, 3), strides=(2, 2), padding='same'),
         Dense(512, activation='relu'),
         Dropout(0.5),
         Dense(1, activation='sigmoid')
     ])
 
     model.compile(optimizer='adam',
-              loss='binary_crossentropy',
-              metrics=["accuracy", Recall(), Precision()])
-    
+                  loss='binary_crossentropy',
+                  metrics=["accuracy", Recall(), Precision()])
+
     return model
 
 
@@ -75,21 +93,21 @@ if __name__ == "__main__":
     model = create_model()
     # Treinamento do modelo
     history = model.fit(
-        train_generator,
+        train_ds,
         epochs=epochs,
-        validation_data=test_generator
+        validation_data=test_ds
     )
 
     # Avaliação do modelo
-    test_loss, test_acc, _, _ = model.evaluate(test_generator)
+    test_loss, test_acc, _, _ = model.evaluate(test_ds)
     print(f"Test accuracy: {test_acc}")
 
     # Predições
-    y_pred = model.predict(test_generator)
+    y_pred = model.predict(test_ds)
     y_pred_classes = np.round(y_pred).astype(int).reshape(-1)
 
     # Matriz de Confusão
-    cm = confusion_matrix(test_generator.classes, y_pred_classes)
+    cm = confusion_matrix(test_ds.classes, y_pred_classes)
     print('Confusion Matrix')
     print(cm)
 
@@ -104,13 +122,15 @@ if __name__ == "__main__":
 
     # Relatório de Classificação
     print('Classification Report')
-    target_names = list(test_generator.class_indices.keys())
-    print(classification_report(test_generator.classes, y_pred_classes, target_names=target_names))
+    target_names = list(test_ds.class_indices.keys())
+    print(classification_report(test_ds.classes,
+          y_pred_classes, target_names=target_names))
 
     # Plotando precisão e validação
     plt.figure()
     plt.plot(history.history["accuracy"], label="accuracy", color="red")
-    plt.plot(history.history["val_accuracy"], label="val_accuracy", color="blue")
+    plt.plot(history.history["val_accuracy"],
+             label="val_accuracy", color="blue")
     plt.legend()
     plt.savefig("acc_val-acc_xception_non_ct.png")
     plt.show()
@@ -119,8 +139,8 @@ if __name__ == "__main__":
     model.save('xception_model.h5')
 
     # Identificando entradas classificadas corretamente e incorretamente
-    file_paths = test_generator.filepaths
-    true_labels = test_generator.classes
+    file_paths = test_ds.filepaths
+    true_labels = test_ds.classes
     correct = []
     incorrect = []
 
