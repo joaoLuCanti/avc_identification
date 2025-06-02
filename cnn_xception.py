@@ -41,19 +41,23 @@ def create_datasets(use_augmentation=True):
         train_dir,
         labels='inferred',
         label_mode='binary',
+        batch_size=None,
         image_size=(img_height, img_width),
-        batch_size=None  # importa como dataset não-batchado
+        shuffle=True
     )
-
+    
     test_ds = tf.keras.utils.image_dataset_from_directory(
         test_dir,
         labels='inferred',
         label_mode='binary',
+        batch_size=None,
         image_size=(img_height, img_width),
-        batch_size=None
+        shuffle=False
     )
 
-    # Augmentação
+    class_names = test_ds.class_names
+
+    # Augmentação condicional
     if use_augmentation:
         data_augmentation = tf.keras.Sequential([
             tf.keras.layers.RandomFlip("horizontal"),
@@ -65,21 +69,19 @@ def create_datasets(use_augmentation=True):
             num_parallel_calls=tf.data.AUTOTUNE
         )
 
-    # Preprocessamento
-    train_ds = train_ds.map(
-        lambda x, y: (preprocess_input(tf.cast(x, tf.float32)), y),
-        num_parallel_calls=tf.data.AUTOTUNE
-    )
-    test_ds = test_ds.map(
-        lambda x, y: (preprocess_input(tf.cast(x, tf.float32)), y),
-        num_parallel_calls=tf.data.AUTOTUNE
-    )
-    class_names = test_ds.class_names
+    preprocess = lambda x, y: (preprocess_input(tf.cast(x, tf.float32)), y)
+    train_ds = train_ds.map(preprocess)
+    test_ds = test_ds.map(preprocess)
 
-    # Otimizações para TPU
-    train_ds = train_ds.cache().shuffle(1000).batch(batch_size, drop_remainder=True).prefetch(tf.data.AUTOTUNE)
-    test_ds = test_ds.cache().batch(batch_size, drop_remainder=True).prefetch(tf.data.AUTOTUNE)
+    # Shuffle + batch + drop_remainder para garantir batches fixos no TPU
+    train_ds = train_ds.shuffle(1000)
+    train_ds = train_ds.batch(batch_size, drop_remainder=True)
+    train_ds = train_ds.cache()
+    train_ds = train_ds.prefetch(buffer_size=tf.data.AUTOTUNE)
 
+    test_ds = test_ds.batch(batch_size, drop_remainder=True)
+    test_ds = test_ds.cache()
+    test_ds = test_ds.prefetch(buffer_size=tf.data.AUTOTUNE)
     return train_ds, test_ds, class_names
 
 
@@ -88,11 +90,15 @@ train_ds, test_ds, class_names = create_datasets()
 def create_model():
     # Definição do modelo Xception
     # base_model = Xception(weights='imagenet', include_top=False, input_shape=(img_height, img_width, 3))
-    base_model = ResNet50(weights='imagenet', include_top=False,
-                          input_shape=(img_height, img_width, 3))
+    base_model = ResNet50(
+        weights='imagenet',
+        include_top=False,
+        input_shape=(img_height, img_width, 3)
+    )
+    base_model.trainable = True  # Congelar camadas do modelo base
+    
     new_input_layer = Conv2D(64, (7, 7), strides=(2, 2), padding='same', input_shape=(img_height, img_width, 1))
     base_model.layers[0] = new_input_layer
-    base_model.trainable = True  # Congelar camadas do modelo base
     model = Sequential([
         base_model,
         GlobalAveragePooling2D(),
