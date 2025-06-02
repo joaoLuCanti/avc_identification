@@ -10,3 +10,5 @@ train_non_ct
 !requirements.txt
 !requirements-colab.txt
 .venv
+test
+train
