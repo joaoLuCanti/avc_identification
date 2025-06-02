@@ -1,7 +1,7 @@
 from cnn_xception import create_datasets, create_model
 
 num_iteracoes = 5
-epochs = 6
+epochs = 10
 
 # Sem augmentation
 accuracies = []
@@ -19,8 +19,9 @@ for i in range(1, num_iteracoes + 1):
     test_loss, test_acc, _, _ = model.evaluate(test_ds)
     accuracies.append(test_acc)
 
+withoutagumentation = sum(accuracies) / len(accuracies)
 print("Média sem augmentation:")
-print(sum(accuracies) / len(accuracies))
+print(withoutagumentation)
 
 # Com augmentation
 accuracies = []
@@ -37,5 +38,10 @@ for i in range(1, num_iteracoes + 1):
     )
     test_loss, test_acc, _, _ = model.evaluate(test_ds)
     accuracies.append(test_acc)
+withaugmentation = sum(accuracies) / len(accuracies)
 print("Média com augmentation:")
-print(sum(accuracies) / len(accuracies))
+print(withaugmentation)
+
+print("Acurácia da média dos resultados:")
+print(f"Média sem agumentation: {withoutagumentation}")
+print(f"Média com augmentation: {withaugmentation}")
