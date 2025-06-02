@@ -3,7 +3,7 @@ from cnn_xception import create_datasets, create_model
 
 # TPU setup
 try:
-    tpu = tf.distribute.cluster_resolver.TPUClusterResolver(tpu='')
+    tpu = tf.distribute.cluster_resolver.TPUClusterResolver()
     tf.config.experimental_connect_to_cluster(tpu)
     tf.tpu.experimental.initialize_tpu_system(tpu)
     strategy = tf.distribute.TPUStrategy(tpu)

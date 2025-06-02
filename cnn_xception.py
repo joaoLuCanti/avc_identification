@@ -9,7 +9,7 @@ from sklearn.metrics import confusion_matrix, classification_report
 from keras.metrics import Recall, Precision
 from keras.applications import ResNet101, ResNet50, DenseNet121, EfficientNetB0
 from keras.metrics import Accuracy, Recall, Precision
-from keras.applications.resnet import preprocess_input
+from keras.applications.resnet50 import preprocess_input
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
