@@ -95,8 +95,10 @@ def process_dycom():
     outro = ["1","0"]
     dycom_dataset = [x+"_dycom" for x in datasets]
     for dataset in dycom_dataset:
-        if dataset == "teste_dycom":
+        if "test" in dataset:
             angles_to_rotate = [15,30,45,60,75,90]
+        else:
+            angles_to_rotate = []
         
         dataset_path = os.path.join(path, dataset)
         for classification in os.listdir(dataset_path):
