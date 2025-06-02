@@ -18,11 +18,21 @@ import seaborn as sns
 img_height = 128
 img_width = 128
 batch_size = 64
-epochs = 5  # 60
+epochs = 1  # 60
 
 # Caminhos
 train_dir = 'train'
 test_dir = 'test'
+
+def get_file_paths(directory, allowed_exts=('jpg', 'jpeg', 'png')):
+    all_files = []
+    for class_name in sorted(os.listdir(directory)):
+        class_path = os.path.join(directory, class_name)
+        if os.path.isdir(class_path):
+            for ext in allowed_exts:
+                all_files.extend(sorted(
+                    tf.io.gfile.glob(f"{class_path}/*.{ext}")))
+    return all_files
 
 # Geradores de dados
 def create_datasets(use_augmentation=True):
@@ -42,6 +52,7 @@ def create_datasets(use_augmentation=True):
         image_size=(img_height, img_width),
         shuffle=False
     )
+    class_names = test_ds.class_names
 
     # Augmentação condicional
     if use_augmentation:
@@ -58,16 +69,14 @@ def create_datasets(use_augmentation=True):
 
     train_ds = train_ds.prefetch(buffer_size=tf.data.AUTOTUNE)
     test_ds = test_ds.prefetch(buffer_size=tf.data.AUTOTUNE)
-    return train_ds, test_ds
+    return train_ds, test_ds, class_names
 
 
-train_ds, test_ds = create_datasets()
-
-# Definição do modelo Xception
-# base_model = Xception(weights='imagenet', include_top=False, input_shape=(img_height, img_width, 3))
-
+train_ds, test_ds, class_names = create_datasets()
 
 def create_model():
+    # Definição do modelo Xception
+    # base_model = Xception(weights='imagenet', include_top=False, input_shape=(img_height, img_width, 3))
     base_model = ResNet50(weights='imagenet', include_top=False,
                           input_shape=(img_height, img_width, 3))
     new_input_layer = Conv2D(64, (7, 7), strides=(2, 2), padding='same', input_shape=(img_height, img_width, 1))
@@ -88,30 +97,23 @@ def create_model():
 
     return model
 
-
-if __name__ == "__main__":
-    model = create_model()
-    # Treinamento do modelo
-    history = model.fit(
-        train_ds,
-        epochs=epochs,
-        validation_data=test_ds
-    )
-
-    # Avaliação do modelo
-    test_loss, test_acc, _, _ = model.evaluate(test_ds)
-    print(f"Test accuracy: {test_acc}")
+def evaluate_model_results(model, test_ds, test_dir):
+    # Extrair rótulos verdadeiros sem alteração
+    y_true = []
+    for _, labels in test_ds:
+        y_true.extend(labels.numpy())
+    y_true = np.array(y_true)
 
     # Predições
     y_pred = model.predict(test_ds)
-    y_pred_classes = np.round(y_pred).astype(int).reshape(-1)
+    y_pred_classes = np.round(y_pred).reshape(-1)
 
-    # Matriz de Confusão
-    cm = confusion_matrix(test_ds.classes, y_pred_classes)
-    print('Confusion Matrix')
+    # Matriz de confusão
+    cm = confusion_matrix(y_true, y_pred_classes)
+    print("Confusion Matrix:")
     print(cm)
 
-    # Plotando a Matriz de Confusão
+    # Plot matriz de confusão com labels 0 e 1 exatamente
     plt.figure(figsize=(10, 7))
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
     plt.xlabel('Predicted')
@@ -120,44 +122,50 @@ if __name__ == "__main__":
     plt.savefig("conf_xception_non_ct.png")
     plt.show()
 
-    # Relatório de Classificação
-    print('Classification Report')
-    target_names = list(test_ds.class_indices.keys())
-    print(classification_report(test_ds.classes,
-          y_pred_classes, target_names=target_names))
+    # Relatório de classificação usando class_names só para o texto
+    print("Classification Report:")
+    print(classification_report(y_true, y_pred_classes, target_names=class_names))
 
-    # Plotando precisão e validação
-    plt.figure()
-    plt.plot(history.history["accuracy"], label="accuracy", color="red")
-    plt.plot(history.history["val_accuracy"],
-             label="val_accuracy", color="blue")
-    plt.legend()
-    plt.savefig("acc_val-acc_xception_non_ct.png")
-    plt.show()
+    # Obter lista de arquivos correspondentes
+    file_paths = get_file_paths(test_dir)
 
-    # Salvando o modelo
-    model.save('xception_model.h5')
+    correct = [file_paths[i] for i in range(len(y_true)) if y_pred_classes[i] == y_true[i]]
+    incorrect = [file_paths[i] for i in range(len(y_true)) if y_pred_classes[i] != y_true[i]]
 
-    # Identificando entradas classificadas corretamente e incorretamente
-    file_paths = test_ds.filepaths
-    true_labels = test_ds.classes
-    correct = []
-    incorrect = []
+    with open('correct_classified.txt', 'w') as f:
+        for item in correct:
+            f.write(f"{item}\n")
 
-    for i, (pred, true) in enumerate(zip(y_pred_classes, true_labels)):
-        if pred == true:
-            correct.append(file_paths[i])
-        else:
-            incorrect.append(file_paths[i])
+    with open('incorrect_classified.txt', 'w') as f:
+        for item in incorrect:
+            f.write(f"{item}\n")
 
     print(f"Correctly classified samples: {len(correct)}")
     print(f"Incorrectly classified samples: {len(incorrect)}")
 
-    # Salvando as listas de arquivos
-    with open('correct_classified.txt', 'w') as f:
-        for item in correct:
-            f.write("%s\n" % item)
+    return y_true, y_pred_classes
 
-    with open('incorrect_classified.txt', 'w') as f:
-        for item in incorrect:
-            f.write("%s\n" % item)
+if __name__ == "__main__":
+    train_ds, test_ds, class_names = create_datasets()
+    model = create_model()
+
+    history = model.fit(
+        train_ds,
+        epochs=epochs,
+        validation_data=test_ds
+    )
+
+    test_loss, test_acc, _, _ = model.evaluate(test_ds)
+    print(f"Test accuracy: {test_acc}")
+
+    y_true, y_pred_classes = evaluate_model_results(model, test_ds, test_dir)
+
+    # Plotar precisão mantendo nome original do arquivo
+    plt.figure()
+    plt.plot(history.history["accuracy"], label="accuracy", color="red")
+    plt.plot(history.history["val_accuracy"], label="val_accuracy", color="blue")
+    plt.legend()
+    plt.savefig("acc_val-acc_xception_non_ct.png")
+    plt.show()
+
+    model.save("xception_model.h5")

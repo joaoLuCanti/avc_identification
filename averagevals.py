@@ -6,7 +6,7 @@ epochs = 10
 # Sem augmentation
 accuracies = []
 for i in range(1, num_iteracoes + 1):
-    train_ds, test_ds = create_datasets(False)
+    train_ds, test_ds, _ = create_datasets(False)
     model = create_model()
     print(f"Iteração nº: {i}")
 
@@ -26,7 +26,7 @@ print(withoutagumentation)
 # Com augmentation
 accuracies = []
 for i in range(1, num_iteracoes + 1):
-    train_ds, test_ds = create_datasets()
+    train_ds, test_ds, _ = create_datasets()
     model = create_model()
     print(f"Iteração nº: {i}")
 
