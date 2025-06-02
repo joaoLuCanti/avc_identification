@@ -36,39 +36,50 @@ def get_file_paths(directory, allowed_exts=('jpg', 'jpeg', 'png')):
 
 # Geradores de dados
 def create_datasets(use_augmentation=True):
+    # Carregar datasets
     train_ds = tf.keras.utils.image_dataset_from_directory(
         train_dir,
         labels='inferred',
         label_mode='binary',
-        batch_size=batch_size,
         image_size=(img_height, img_width),
-        shuffle=True
+        batch_size=None  # importa como dataset não-batchado
     )
+
     test_ds = tf.keras.utils.image_dataset_from_directory(
         test_dir,
         labels='inferred',
         label_mode='binary',
-        batch_size=batch_size,
         image_size=(img_height, img_width),
-        shuffle=False
+        batch_size=None
     )
-    class_names = test_ds.class_names
 
-    # Augmentação condicional
+    # Augmentação
     if use_augmentation:
         data_augmentation = tf.keras.Sequential([
             tf.keras.layers.RandomFlip("horizontal"),
             tf.keras.layers.RandomRotation(0.25),
             tf.keras.layers.RandomContrast(0.1),
         ])
-        train_ds = train_ds.map(lambda x, y: (data_augmentation(x, training=True), y))
+        train_ds = train_ds.map(
+            lambda x, y: (data_augmentation(x, training=True), y),
+            num_parallel_calls=tf.data.AUTOTUNE
+        )
 
-    preprocess = lambda x, y: (preprocess_input(tf.cast(x, tf.float32)), y)
-    train_ds = train_ds.map(preprocess)
-    test_ds = test_ds.map(preprocess)
+    # Preprocessamento
+    train_ds = train_ds.map(
+        lambda x, y: (preprocess_input(tf.cast(x, tf.float32)), y),
+        num_parallel_calls=tf.data.AUTOTUNE
+    )
+    test_ds = test_ds.map(
+        lambda x, y: (preprocess_input(tf.cast(x, tf.float32)), y),
+        num_parallel_calls=tf.data.AUTOTUNE
+    )
+    class_names = test_ds.class_names
 
-    train_ds = train_ds.prefetch(buffer_size=tf.data.AUTOTUNE)
-    test_ds = test_ds.prefetch(buffer_size=tf.data.AUTOTUNE)
+    # Otimizações para TPU
+    train_ds = train_ds.cache().shuffle(1000).batch(batch_size, drop_remainder=True).prefetch(tf.data.AUTOTUNE)
+    test_ds = test_ds.cache().batch(batch_size, drop_remainder=True).prefetch(tf.data.AUTOTUNE)
+
     return train_ds, test_ds, class_names
 
 

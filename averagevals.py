@@ -1,4 +1,16 @@
+import tensorflow as tf
 from cnn_xception import create_datasets, create_model
+
+# TPU setup
+try:
+    tpu = tf.distribute.cluster_resolver.TPUClusterResolver()
+    tf.config.experimental_connect_to_cluster(tpu)
+    tf.tpu.experimental.initialize_tpu_system(tpu)
+    strategy = tf.distribute.TPUStrategy(tpu)
+    print("TPU detectada e inicializada.")
+except ValueError:
+    strategy = tf.distribute.get_strategy()
+    print("TPU não detectada. Usando CPU/GPU.")
 
 num_iteracoes = 5
 epochs = 10
@@ -7,7 +19,8 @@ epochs = 10
 accuracies = []
 for i in range(1, num_iteracoes + 1):
     train_ds, test_ds, _ = create_datasets(False)
-    model = create_model()
+    with strategy.scope():
+        model = create_model()
     print(f"Iteração nº: {i}")
 
     history = model.fit(
