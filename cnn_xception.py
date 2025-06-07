@@ -61,8 +61,7 @@ def create_datasets(use_augmentation=True):
     if use_augmentation:
         data_augmentation = tf.keras.Sequential([
             tf.keras.layers.RandomFlip("horizontal"),
-            tf.keras.layers.RandomRotation(0.25),
-            tf.keras.layers.RandomContrast(0.1),
+            tf.keras.layers.RandomRotation(0.25)
         ])
         train_ds = train_ds.map(
             lambda x, y: (data_augmentation(x, training=True), y),
