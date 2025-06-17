@@ -16,7 +16,7 @@ except ValueError:
     print("TPU não detectada. Usando CPU/GPU.")
 
 num_iteracoes = 5
-epochs = 40
+epochs = 60
 
 # Sem augmentation
 accuracies = []
