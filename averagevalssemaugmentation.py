@@ -1,4 +1,6 @@
 import tensorflow as tf
+import keras.backend as K
+import gc
 from cnn_xception import create_datasets, create_model
 from utilitariospyplot import plotCurvaDeAprendizagem
 
@@ -35,6 +37,11 @@ for i in range(1, num_iteracoes + 1):
 
     test_loss, test_acc, _, _ = model.evaluate(test_ds)
     accuracies.append(test_acc)
+
+    del model
+    del history
+    K.clear_session()
+    gc.collect()
 
 plotCurvaDeAprendizagem(curvasdeaprendizagem, "Sem Augmentation")
 
