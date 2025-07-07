@@ -1,5 +1,8 @@
 import tensorflow as tf
-from cnn_xception_novo import create_datasets, create_model
+import keras.backend as K
+import gc
+from cnn_xception import create_datasets, create_model
+from utilitariospyplot import plotCurvaDeAprendizagem
 
 # TPU setup
 try:
@@ -15,12 +18,13 @@ except ValueError:
 num_iteracoes = 5
 epochs = 60
 
-# Com augmentation
+# Sem augmentation
 accuracies = []
 curvasdeaprendizagem = []
 for i in range(1, num_iteracoes + 1):
-    train_ds, test_ds, _ = create_datasets()
-    model = create_model()
+    train_ds, test_ds, _ = create_datasets(False)
+    with strategy.scope():
+        model = create_model()
     print(f"Iteração nº: {i}")
 
     history = model.fit(
@@ -39,8 +43,10 @@ for i in range(1, num_iteracoes + 1):
     K.clear_session()
     gc.collect()
 
-plotCurvaDeAprendizagem(curvasdeaprendizagem, "Com Augmentation")
+plotCurvaDeAprendizagem(curvasdeaprendizagem, "Sem Augmentation")
 
-withaugmentation = sum(accuracies) / len(accuracies)
-print("Média com augmentation:")
-print(withaugmentation)
+withoutagumentation = sum(accuracies) / len(accuracies)
+print("Média sem augmentation:")
+print(withoutagumentation)
+
+plotCurvaDeAprendizagem(curvasdeaprendizagem, "Sem Augmentation")
