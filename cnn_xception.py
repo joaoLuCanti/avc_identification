@@ -22,16 +22,17 @@ epochs = 1
 
 # Caminhos
 train_dir = 'train'
+trainrotated_dir = 'trainrotated'
 test_dir = 'test'
 
 # Geradores de dados
-
-
 def create_generators(with_augmentation=True):
     if with_augmentation:
         train_datagen = ImageDataGenerator(
-            preprocessing_function=preprocess_input,
-            rotation_range=90
+            preprocessing_function=preprocess_input#,
+            #horizontal_flip=True,
+            #vertical_flip=True,
+            #rotation_range=90
         )
     else:
         train_datagen = ImageDataGenerator(
@@ -39,7 +40,7 @@ def create_generators(with_augmentation=True):
     test_datagen = ImageDataGenerator(preprocessing_function=preprocess_input)
 
     train_generator = train_datagen.flow_from_directory(
-        train_dir,
+        train_dir if not with_augmentation else trainrotated_dir,
         target_size=(img_height, img_width),
         batch_size=batch_size,
         class_mode='binary'

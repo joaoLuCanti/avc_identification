@@ -49,7 +49,7 @@ def printresultados(augmentation, test_generator, history):
     plt.show()
 
 
-epochs = 1
+epochs = 60
 batch_size = 48
 
 # Sem augmentation
@@ -74,5 +74,4 @@ history = model.fit(
     verbose=1
 )
 test_loss, test_acc, _, _ = model.evaluate(test_generator)
-print(f"Acurácia com augmentation: {test_acc * 100}%")
 printresultados(True, test_generator, history)
