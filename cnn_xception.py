@@ -93,14 +93,13 @@ def create_model(batch_size=batch_size):
 
 model = create_model()
 
-# Treinamento do modelo
-history = model.fit(
-    train_generator,
-    epochs=epochs,
-    validation_data=test_generator
-)
-
 if __name__ == "__main__":
+    # Treinamento do modelo
+    history = model.fit(
+        train_generator,
+        epochs=epochs,  
+        validation_data=test_generator
+    )
     # Avaliação do modelo
     test_loss, test_acc, _, _ = model.evaluate(test_generator)
     print(f"Test accuracy: {test_acc}")

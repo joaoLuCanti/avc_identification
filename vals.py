@@ -13,9 +13,9 @@ def printresultados(augmentation, test_generator, history):
     accuracy = accuracy_score(test_generator.classes, y_pred_classes)
     precision = precision_score(test_generator.classes, y_pred_classes)
     recall = recall_score(test_generator.classes, y_pred_classes)
-    print(f'Accuracy: {accuracy * 100.0:.2f}')
-    print(f'Precision: {precision * 100.0:.2f}')
-    print(f'Recall: {recall * 100.0:.2f}')
+    print(f'Accuracy: {accuracy * 100.0:.2f}%')
+    print(f'Precision: {precision * 100.0:.2f}%')
+    print(f'Recall: {recall * 100.0:.2f}%')
 
     # Matriz de Confusão
     cm = confusion_matrix(test_generator.classes, y_pred_classes)
