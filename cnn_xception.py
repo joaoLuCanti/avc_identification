@@ -71,7 +71,7 @@ def create_model(batch_size=batch_size):
 
     new_input_layer = Conv2D(64, (7, 7), strides=(
         2, 2), padding='same', input_shape=(img_height, img_width, 1))
-    base_model.layers[0] = new_input_layer
+    # base_model.layers[0] = new_input_layer
 
     base_model.trainable = True  # Congelar camadas do modelo base
 

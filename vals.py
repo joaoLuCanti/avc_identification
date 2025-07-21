@@ -47,6 +47,29 @@ def printresultados(augmentation, test_generator, history):
     plt.savefig(
         f"acc_val-acc_xception_non_ct_{'com' if augmentation else 'sem'}_augmentation.png")
     plt.show()
+    
+    file_paths = test_generator.filepaths
+    true_labels = test_generator.classes
+    correct = []
+    incorrect = []
+
+    for i, (pred, true) in enumerate(zip(y_pred_classes, true_labels)):
+        if pred == true:
+            correct.append(file_paths[i])
+        else:
+            incorrect.append(file_paths[i])
+
+    print(f"Correctly classified samples: {len(correct)}")
+    print(f"Incorrectly classified samples: {len(incorrect)}")
+
+    # Salvando as listas de arquivos
+    with open(f'correct_classified_{"com" if augmentation else "sem"}_augmentation.txt', 'w') as f:
+        for item in correct:
+            f.write("%s\n" % item)
+
+    with open(f'incorrect_classified_{"com" if augmentation else "sem"}_augmentation.txt', 'w') as f:
+        for item in incorrect:
+            f.write("%s\n" % item)
 
 
 epochs = 60
