@@ -73,7 +73,7 @@ def printresultados(augmentation, test_generator, history):
 
 
 epochs = 60
-batch_size = 48
+batch_size = 64
 
 # Sem augmentation
 train_generator, test_generator = create_generators(False)

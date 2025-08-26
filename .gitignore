@@ -13,5 +13,5 @@ train_non_ct
 .venv
 test
 train
-acc_val-acc_xception_non_ct.png
-conf_xception_non_ct.png
+acc_val-acc_xception_non_ct*.png
+conf_xception_non_ct*.png
