@@ -5,48 +5,66 @@ from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, r
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+import sys
 
-def printresultados(augmentation, test_generator, history):
+verbose = False
+if len(sys.argv) > 1:
+    verbose = bool(sys.argv[1])
+
+class show_resultados:
+    @staticmethod
+    def plot_confusion_matrix(cm, augmentation):
+        # Plotando a Matriz de Confusão
+        plt.figure(figsize=(10, 7))
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
+        plt.xlabel('Predicted')
+        plt.ylabel('True')
+        plt.title('Confusion Matrix')
+        nome_plt_mc = f"conf_xception_non_ct_{'com' if augmentation else 'sem'}_augmentation.png"
+        plt.savefig(nome_plt_mc)
+        plt.show()
+    
+    @staticmethod
+    def class_report(test_generator, y_pred_classes):
+        print('Classification Report')
+        target_names = list(test_generator.class_indices.keys())
+        print(classification_report(test_generator.classes,
+                                    y_pred_classes, target_names=target_names))
+    
+    @staticmethod
+    def plot_precision_validation(history, augmentation):
+        plt.figure()
+        plt.plot(history.history["accuracy"], label="accuracy", color="red")
+        plt.plot(history.history["val_accuracy"],
+                label="val_accuracy", color="blue")
+        plt.legend()
+        plt.savefig(
+            f"acc_val-acc_xception_non_ct_{'com' if augmentation else 'sem'}_augmentation.png")
+        plt.show()
+
+
+def generate_resultados(augmentation, test_generator, history):
     y_pred = model.predict(test_generator)
     y_pred_classes = np.round(y_pred).astype(int).reshape(-1)
 
     accuracy = accuracy_score(test_generator.classes, y_pred_classes)
     precision = precision_score(test_generator.classes, y_pred_classes)
     recall = recall_score(test_generator.classes, y_pred_classes)
-    print(f'Accuracy: {accuracy * 100.0:.2f}%')
-    print(f'Precision: {precision * 100.0:.2f}%')
-    print(f'Recall: {recall * 100.0:.2f}%')
 
     # Matriz de Confusão
     cm = confusion_matrix(test_generator.classes, y_pred_classes)
-    print("Confunsion Matrix:")
-    print(cm)
 
-    # Plotando a Matriz de Confusão
-    plt.figure(figsize=(10, 7))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues')
-    plt.xlabel('Predicted')
-    plt.ylabel('True')
-    plt.title('Confusion Matrix')
-    nome_plt_mc = f"conf_xception_non_ct_{'com' if augmentation else 'sem'}_augmentation.png"
-    plt.savefig(nome_plt_mc)
-    plt.show()
+    print_resultados(accuracy, precision, recall, cm)
+    
+    if verbose:
+        # Plotando a Matriz de Confusão
+        show_resultados.plot_confusion_matrix(cm, augmentation)
 
-    # Relatório de Classificação
-    print('Classification Report')
-    target_names = list(test_generator.class_indices.keys())
-    print(classification_report(test_generator.classes,
-                                y_pred_classes, target_names=target_names))
+        # Relatório de Classificação
+        show_resultados.class_report(test_generator, y_pred_classes)
 
-    # Plotando precisão e validação
-    plt.figure()
-    plt.plot(history.history["accuracy"], label="accuracy", color="red")
-    plt.plot(history.history["val_accuracy"],
-             label="val_accuracy", color="blue")
-    plt.legend()
-    plt.savefig(
-        f"acc_val-acc_xception_non_ct_{'com' if augmentation else 'sem'}_augmentation.png")
-    plt.show()
+        # Plotando precisão e validação
+        show_resultados.plot_precision_validation(history, augmentation)
     
     file_paths = test_generator.filepaths
     true_labels = test_generator.classes
@@ -59,9 +77,6 @@ def printresultados(augmentation, test_generator, history):
         else:
             incorrect.append(file_paths[i])
 
-    print(f"Correctly classified samples: {len(correct)}")
-    print(f"Incorrectly classified samples: {len(incorrect)}")
-
     # Salvando as listas de arquivos
     with open(f'correct_classified_{"com" if augmentation else "sem"}_augmentation.txt', 'w') as f:
         for item in correct:
@@ -71,6 +86,12 @@ def printresultados(augmentation, test_generator, history):
         for item in incorrect:
             f.write("%s\n" % item)
 
+def print_resultados(accuracy, precision, recall, cm):
+    print(f'Accuracy: {accuracy * 100.0:.2f}%')
+    print(f'Precision: {precision * 100.0:.2f}%')
+    print(f'Recall: {recall * 100.0:.2f}%')
+    print("Matriz de confusão:")
+    print(cm)
 
 epochs = 60
 batch_size = 64
@@ -85,7 +106,7 @@ history = model.fit(
     verbose=1
 )
 test_loss, test_acc, _, _ = model.evaluate(test_generator)
-printresultados(False, test_generator, history)
+generate_resultados(False, test_generator, history)
 
 # Com augmentation
 train_generator, test_generator = create_generators(True)
@@ -97,4 +118,12 @@ history = model.fit(
     verbose=1
 )
 test_loss, test_acc, _, _ = model.evaluate(test_generator)
-printresultados(True, test_generator, history)
+generate_resultados(True, test_generator, history)
+
+
+
+import keras
+
+(trainx,trainy),(valx,valy) = keras.datasets.mnist.load_data()
+
+keras.layers.Dense(10,activation='softmax')
