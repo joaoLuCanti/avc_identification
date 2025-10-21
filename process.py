@@ -12,6 +12,9 @@ os.makedirs("test/1", exist_ok=True)
 os.makedirs("test/0", exist_ok=True)
 os.makedirs("train/1", exist_ok=True)
 os.makedirs("train/0", exist_ok=True)
+os.makedirs("trainrotated", exist_ok=True) 
+os.makedirs("trainrotated/1", exist_ok=True)
+os.makedirs("trainrotated/0", exist_ok=True)
 
 def normalize_image(image):
     return cv2.normalize(image, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
@@ -90,6 +93,7 @@ from sklearn.metrics import precision_score, recall_score, f1_score
 def process_dycom():
     # angles_to_rotate = [15,30,45,60,75,90]
     angles_to_rotate = []
+    angulos_trainrotated = [15, 30, 45, 60, 75, 90]
     path = os.getcwd()
     datasets =["test","train"]
     outro = ["1","0"]
@@ -118,7 +122,7 @@ def process_dycom():
                     janelamento = [0, 150]
                     CT_case = False
                 img = get_jan(img = img_dc, jan = janelamento, CT_case = CT_case)
-                mid_point = split_image(img)
+                  #mid_point = split_image(img)
                 # img[182:298,202:350] = 255
                 if "test" in dataset:
                     new_dataset = "test"
@@ -127,29 +131,38 @@ def process_dycom():
                 new_dataset_path = os.path.join(path,new_dataset)
                 new_classification_path = os.path.join(new_dataset_path,classification)
                 #test_image(img)
-                img1 = img[:,mid_point:]
-                img2 = img[:, 0:mid_point]
+                  #img1 = img[:,mid_point:]
+                  #img2 = img[:, 0:mid_point]
                 img_path = os.path.join(new_classification_path, slices[:-4]+".png") 
                 img1_path = os.path.join(new_classification_path, slices[:-4]+"_1"+".png") 
-                img2_path = os.path.join(new_classification_path, slices[:-4]+"_2"+".png")
-                hori_flip = cv2.flip(img, 1)
-                img_hori_path = os.path.join(new_classification_path, slices[:-4]+"horizontal_flip"+".png")
-                vert_flip = cv2.flip(img, 0)
-                img_vert_path = os.path.join(new_classification_path, slices[:-4]+"vert_flip"+".png")
-                img_equalized = cv2.equalizeHist(img)
-                img_equalized_path = os.path.join(new_classification_path, slices[:-4]+"equalized"+".png")
+                  #img2_path = os.path.join(new_classification_path, slices[:-4]+"_2"+".png")
+                  #hori_flip = cv2.flip(img, 1)
+                  #img_hori_path = os.path.join(new_classification_path, slices[:-4]+"horizontal_flip"+".png")
+                  #vert_flip = cv2.flip(img, 0)
+                  #img_vert_path = os.path.join(new_classification_path, slices[:-4]+"vert_flip"+".png")
+                  #img_equalized = cv2.equalizeHist(img)
+                  #img_equalized_path = os.path.join(new_classification_path, slices[:-4]+"equalized"+".png")
                 try:
-                    cv2.imwrite(img_path, img)
-                    # cv2.imwrite(img2_path, img1)
-                    # cv2.imwrite(img2_path, img2)
-                    #cv2.imwrite(img_hori_path, hori_flip)
-                    #cv2.imwrite(img_vert_path, vert_flip)
-                    for angle in angles_to_rotate:
-                        img_rotated = rotate_image(img, angle)
-                        img_rotate_path = os.path.join(new_classification_path, slices[:-4]+"rotated_"+f"{angle}"+".png")
-                        cv2.imwrite(img_rotate_path, img_rotated)
+                    if "train" in dataset:
+                        # Salva na pasta train normal
+                        cv2.imwrite(img_path, img)
+                        
+                        # Salva na pasta trainrotated com as rotações
+                        rotated_path = img_path.replace("train", "trainrotated")
+                        cv2.imwrite(rotated_path, img)
+                        for angle in angulos_trainrotated:
+                            img_rotated = rotate_image(img, angle)
+                            img_rotate_path = rotated_path.replace(".png", f"_rotated_{angle}.png")
+                            cv2.imwrite(img_rotate_path, img_rotated)
+                    else:
+                        # Comportamento original para test
+                        cv2.imwrite(img_path, img)
+                        for angle in angles_to_rotate:
+                            img_rotated = rotate_image(img, angle)
+                            img_rotate_path = os.path.join(new_classification_path, slices[:-4]+"rotated_"+f"{angle}"+".png")
+                            cv2.imwrite(img_rotate_path, img_rotated)
                 except Exception as e:
-                    print(f"erro na imagem {img1_path}")
+                    print(f"erro na imagem {img_path}")
                     print(f"ERRO = {e}")
                 #cv2.imwrite(img_equalized_path, img_equalized)
 
