@@ -16,4 +16,8 @@ train
 acc_val-acc_xception_non_ct*.png
 conf_xception_non_ct*.png
 teste.py
+teste.ipynb
 __pycache__/cnn_xception.cpython-311.pyc
+modeloteste.keras
+__pycache__/
+*.pyc
