@@ -119,11 +119,3 @@ history = model.fit(
 )
 test_loss, test_acc, _, _ = model.evaluate(test_generator)
 generate_resultados(True, test_generator, history)
-
-
-
-import keras
-
-(trainx,trainy),(valx,valy) = keras.datasets.mnist.load_data()
-
-keras.layers.Dense(10,activation='softmax')
